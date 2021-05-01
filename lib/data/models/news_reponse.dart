@@ -41,13 +41,12 @@ class Article extends ArticleEntity {
     this.source,
     this.author,
     required this.title,
-    this.description,
-    this.url,
-    this.urlToImage,
+    required this.description,
+    required this.url,
+    required this.urlToImage,
     required this.publishedAt,
-    required this.content,
   }) : super(
-          content: content,
+          description: description,
           title: title,
           publishedAt: publishedAt,
           url: url,
@@ -57,32 +56,33 @@ class Article extends ArticleEntity {
   Source? source;
   String? author;
   String title;
-  String? description;
-  String? url;
-  String? urlToImage;
+  String description;
+  String url;
+  String urlToImage;
   DateTime publishedAt;
-  String content;
 
   factory Article.fromJson(Map<String, dynamic> json) => Article(
         source: Source.fromJson(json["source"]),
         author: json["author"] == null ? null : json["author"],
         title: json["title"],
-        description: json["description"],
-        url: json["url"],
-        urlToImage: json["urlToImage"],
+        description: json["description"] ?? '',
+        url: json["url"] ?? 'https://google.com',
+        urlToImage: json["urlToImage"] != null && json['urlToImage'].isNotEmpty
+            ? json["urlToImage"].contains('http://')
+                ? 'https://images.ctfassets.net/mk9nps9h607g/5DnT6NoTCguwc4egkiGcIg/b3f22bef3f59efa5b8711c8268cde80a/news-placeholder.jpg'
+                : json['urlToImage']
+            : 'https://images.ctfassets.net/mk9nps9h607g/5DnT6NoTCguwc4egkiGcIg/b3f22bef3f59efa5b8711c8268cde80a/news-placeholder.jpg',
         publishedAt: DateTime.parse(json["publishedAt"]),
-        content: json["content"],
       );
 
   Map<String, dynamic> toJson() => {
-        "source": source!.toJson(),
+        'source': source!.toJson(),
         "author": author == null ? null : author,
         "title": title,
         "description": description,
         "url": url,
         "urlToImage": urlToImage,
         "publishedAt": publishedAt.toIso8601String(),
-        "content": content,
       };
 }
 

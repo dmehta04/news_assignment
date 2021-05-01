@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:news_app/domain/entities/article_entity.dart';
+import 'package:news_app/presentation/pages/notifiers/article_notifier.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
-class ArticleDisplayPage extends StatelessWidget {
+class ArticleDisplayPage extends StatefulWidget {
   const ArticleDisplayPage({Key? key}) : super(key: key);
-  static const _url =
-      "https://pitchfork.com/news/billie-eilish-announces-new-album-happier-than-ever/";
+
+  @override
+  _ArticleDisplayPageState createState() => _ArticleDisplayPageState();
+}
+
+class _ArticleDisplayPageState extends State<ArticleDisplayPage> {
+  ArticleNotifier? articleNotifier;
+  ArticleEntity? article;
+  @override
+  void initState() {
+    articleNotifier = context.read<ArticleNotifier>();
+    article = articleNotifier!.selectedArticle;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,39 +28,42 @@ class ArticleDisplayPage extends StatelessWidget {
         title: Text("News Feed"),
       ),
       body: Container(
+        height: MediaQuery.of(context).size.height,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              children: [
-                Image.network(
-                  "https://images.livemint.com/img/2021/04/28/600x338/Goa_CM_1619597866790_1619597872625.jpg",
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Text(
-                    "DRDO conducts maiden trial of Python-5 air to air missile - Times of India",
-                    style: TextStyle(
-                      fontSize: 28.0,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(15.0),
-                    child: Text(
-                      "India News: HYDERABAD: India's indigenous Light Combat Aircraft, Tejas, has added the 5th generation Python-5 Air-to-Air Missile (AAM) in its air-to-air weapons c.",
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w200,
+            Image.network(
+              article!.urlToImage,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Text(
+                        article!.title,
+                        style: TextStyle(
+                          fontSize: 28.0,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Text(
+                        article!.description,
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w200,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -61,7 +79,7 @@ class ArticleDisplayPage extends StatelessWidget {
     );
   }
 
-  void _launchURL() async => await canLaunch(_url)
-      ? await launch(_url)
-      : throw "Could Not Launch Url $_url";
+  void _launchURL() async => await canLaunch(article!.url)
+      ? await launch(article!.url)
+      : throw "Could Not Launch Url ${article!.url}";
 }
