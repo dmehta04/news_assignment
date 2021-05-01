@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:news_app/domain/entities/article_entity.dart';
+import 'package:news_app/presentation/pages/notifiers/article_notifier.dart';
+import 'package:provider/provider.dart';
 
-class NewsFeedPage extends StatelessWidget {
+class NewsFeedPage extends StatefulWidget {
   final String? title;
   final String? imageUrl;
   final DateTime? publishedDate;
@@ -9,73 +12,110 @@ class NewsFeedPage extends StatelessWidget {
   NewsFeedPage({this.title, this.imageUrl, this.publishedDate});
 
   @override
+  _NewsFeedPageState createState() => _NewsFeedPageState();
+}
+
+class _NewsFeedPageState extends State<NewsFeedPage> {
+  bool isFetched = false;
+  ScrollController _scrollController = ScrollController();
+  int pageNo = 1;
+  @override
+  void initState() {
+    ArticleNotifier articleNotifier = context.read<ArticleNotifier>();
+    articleNotifier.fetchArticle(pageNo);
+    _scrollController.addListener(() {
+      if ((_scrollController.offset >
+              _scrollController.position.maxScrollExtent - 200) &&
+          !isFetched) {
+        if (articleNotifier.list!.length < pageNo * 10) {
+        } else {
+          isFetched = true;
+          pageNo = pageNo + 1;
+          articleNotifier.fetchArticle(pageNo);
+        }
+      }
+    });
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("News Feed"),
       ),
-      body: ListView.builder(
-          itemCount: 5,
-          itemBuilder: (context, index) {
-            return Container(
-              margin: EdgeInsets.all(20),
-              height: 90,
-              width: 100,
-              child: Row(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 1 / 1,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Image(
-                        fit: BoxFit.fitHeight,
-                        image: NetworkImage(
-                          "https://static.toiimg.com/thumb/msid-82289682,width-1070,height-580,imgsize-495373,resizemode-75,overlay-toi_sw,pt-32,y_pad-40/photo.jpg",
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      body:
+          Consumer<ArticleNotifier>(builder: (context, artilceNotifier, child) {
+        if (artilceNotifier.list!.isEmpty) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        isFetched = false;
+        return Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: artilceNotifier.list!.length,
+                itemBuilder: (context, index) {
+                  ArticleEntity ae = artilceNotifier.list![index];
+                  return InkWell(
+                    onTap: () {
+                      artilceNotifier.selectedArticle = ae;
+                      Navigator.pushNamed(context, "/articleDisplay");
+                    },
+                    child: Container(
+                      margin: EdgeInsets.all(20),
+                      height: 90,
+                      width: 100,
+                      child: Row(
                         children: [
-                          Text(
-                            "DRDO conducts maiden trial of Python-5 air to air missile - Times of India",
-                            style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.bold),
+                          AspectRatio(
+                            aspectRatio: 1 / 1,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(15),
+                              child: Image(
+                                fit: BoxFit.fitHeight,
+                                image: NetworkImage(ae.urlToImage),
+                              ),
+                            ),
                           ),
-                          Text(
-                            DateFormat.yMMMd().format(DateTime.now()),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    ae.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    DateFormat.yMMMd().format(ae.publishedAt),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-            );
-          }),
+            ),
+            if (artilceNotifier.isLoading)
+              Center(child: CircularProgressIndicator())
+          ],
+        );
+      }),
     );
   }
 }
-
-// ListTile(
-//               leading: Image.network(
-//                 "https://static.toiimg.com/thumb/msid-82289682,width-1070,height-580,imgsize-495373,resizemode-75,overlay-toi_sw,pt-32,y_pad-40/photo.jpg",
-//               ),
-//               title: Text(
-//                 "DRDO conducts maiden trial of Python-5 air to air missile - Times of India",
-//                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-//               ),
-//               subtitle: Padding(
-//                 padding: const EdgeInsets.only(top: 8.0),
-//                 child: Text(
-//                   DateFormat.yMMMd().format(DateTime.now()),
-//                 ),
-//               ),
-//               onTap: () {
-//                 Navigator.pushNamed(context, "/articleDisplay");
-//               });
